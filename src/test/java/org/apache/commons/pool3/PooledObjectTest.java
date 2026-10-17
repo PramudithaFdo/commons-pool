@@ -17,9 +17,11 @@
 
 package org.apache.commons.pool3;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.commons.pool3.impl.DefaultPooledObject;
@@ -49,5 +51,31 @@ public class PooledObjectTest {
         assertFalse(PooledObject.nonNull(null));
         assertFalse(PooledObject.nonNull(new DefaultPooledObject<>(null)));
         assertTrue(PooledObject.nonNull(new DefaultPooledObject<>("a")));
+    }
+
+    @Test
+    void testBaseObjectPoolCloseState() {
+        final BaseObjectPool<String, RuntimeException> pool = new BaseObjectPool<>() {
+            @Override
+            public String borrowObject() {
+                return "available";
+            }
+
+            @Override
+            public void invalidateObject(final String obj) {
+            }
+
+            @Override
+            public void returnObject(final String obj) {
+            }
+        };
+
+        assertFalse(pool.isClosed());
+        assertDoesNotThrow(pool::assertOpen);
+
+        pool.close();
+
+        assertTrue(pool.isClosed());
+        assertThrows(IllegalStateException.class, pool::assertOpen);
     }
 }
